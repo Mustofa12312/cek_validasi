@@ -25,7 +25,7 @@ class TableView(ctk.CTkFrame):
     """Wrapper CustomTkinter yang menampung ttk.Treeview berwarna."""
 
     def __init__(self, master, on_edit=None, **kwargs):
-        super().__init__(master, fg_color='#0d1117', corner_radius=10, **kwargs)
+        super().__init__(master, fg_color=('#f1f5f9', '#0d1117'), corner_radius=10, **kwargs)
         self._full_df: Optional[pd.DataFrame] = None
         self._on_edit = on_edit
         self._build()
@@ -36,30 +36,9 @@ class TableView(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        style = ttk.Style()
-        style.theme_use('clam')
-
-        style.configure('Treeview',
-            background='#161b22',
-            foreground='#e6edf3',
-            rowheight=28,
-            fieldbackground='#161b22',
-            borderwidth=0,
-            font=('Segoe UI', 10)
-        )
-        style.configure('Treeview.Heading',
-            background='#1e2a45',
-            foreground='#93c5fd',
-            relief='flat',
-            font=('Segoe UI', 10, 'bold')
-        )
-        style.map('Treeview',
-            background=[('selected', '#2563eb')],
-            foreground=[('selected', '#ffffff')]
-        )
-        style.map('Treeview.Heading',
-            background=[('active', '#253b5e')]
-        )
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+        self.update_theme("dark")
 
         # Treeview
         self.tree = ttk.Treeview(
@@ -93,6 +72,44 @@ class TableView(ctk.CTkFrame):
 
         self._sort_col = None
         self._sort_rev = False
+
+    def update_theme(self, mode: str):
+        if mode == "light":
+            bg = '#ffffff'
+            fg = '#1e293b'
+            head_bg = '#e2e8f0'
+            head_fg = '#0f172a'
+            sel_bg = '#3b82f6'
+            act_bg = '#cbd5e1'
+        else:
+            bg = '#161b22'
+            fg = '#e6edf3'
+            head_bg = '#1e2a45'
+            head_fg = '#93c5fd'
+            sel_bg = '#2563eb'
+            act_bg = '#253b5e'
+
+        self.style.configure('Treeview',
+            background=bg,
+            foreground=fg,
+            rowheight=28,
+            fieldbackground=bg,
+            borderwidth=0,
+            font=('Segoe UI', 10)
+        )
+        self.style.configure('Treeview.Heading',
+            background=head_bg,
+            foreground=head_fg,
+            relief='flat',
+            font=('Segoe UI', 10, 'bold')
+        )
+        self.style.map('Treeview',
+            background=[('selected', sel_bg)],
+            foreground=[('selected', '#ffffff')]
+        )
+        self.style.map('Treeview.Heading',
+            background=[('active', act_bg)]
+        )
 
     # ─── Public API ───────────────────────────────────────────────────────────
 

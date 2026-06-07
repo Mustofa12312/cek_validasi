@@ -21,7 +21,7 @@ class Toolbar(ctk.CTkFrame):
     """Baris toolbar: search + filter + export."""
 
     def __init__(self, master, on_search, on_filter, on_export_excel, on_export_csv, **kwargs):
-        super().__init__(master, fg_color='#1e2a45', corner_radius=10, **kwargs)
+        super().__init__(master, fg_color=('#ffffff', '#1e2a45'), corner_radius=10, **kwargs)
         self._on_search = on_search
         self._on_filter = on_filter
         self._on_export_excel = on_export_excel
@@ -44,8 +44,8 @@ class Toolbar(ctk.CTkFrame):
             placeholder_text='Cari Nama, NIK, KK, atau Alamat…',
             height=36,
             corner_radius=8,
-            border_color='#334155',
-            fg_color='#0d1117',
+            border_color=('#cbd5e1', '#334155'),
+            fg_color=('#f1f5f9', '#0d1117'),
             font=ctk.CTkFont(size=13)
         )
         self.search_entry.grid(row=0, column=1, padx=(0, 12), pady=12, sticky='ew')
@@ -54,7 +54,7 @@ class Toolbar(ctk.CTkFrame):
         filter_label = ctk.CTkLabel(
             self, text='Filter:',
             font=ctk.CTkFont(size=12, weight='bold'),
-            text_color='#94a3b8'
+            text_color=('#475569', '#94a3b8')
         )
         filter_label.grid(row=0, column=2, padx=(0, 6), pady=12)
 
@@ -66,7 +66,8 @@ class Toolbar(ctk.CTkFrame):
             width=150,
             height=36,
             corner_radius=8,
-            fg_color='#0d1117',
+            fg_color=('#f1f5f9', '#0d1117'),
+            text_color=('#0f172a', '#f8fafc'),
             button_color='#2563eb',
             button_hover_color='#1d4ed8',
             font=ctk.CTkFont(size=13),

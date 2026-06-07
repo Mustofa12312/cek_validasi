@@ -34,7 +34,7 @@ class App(ctk.CTk):
         self._nik_dup: set = set()
         self._kk_dup: set = set()
 
-        self.configure(fg_color='#0d1117')
+        self.configure(fg_color=('#f1f5f9', '#0d1117'))
         self._build_ui()
 
     # ─── UI Construction ──────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ class App(ctk.CTk):
         self._build_statusbar()
 
     def _build_header(self):
-        hdr = ctk.CTkFrame(self, height=58, corner_radius=0, fg_color='#111827')
+        hdr = ctk.CTkFrame(self, height=58, corner_radius=0, fg_color=('#ffffff', '#111827'))
         hdr.grid(row=0, column=0, sticky='ew')
         hdr.grid_columnconfigure(1, weight=1)
         hdr.grid_propagate(False)
@@ -82,24 +82,31 @@ class App(ctk.CTk):
             hdr,
             text='🔍  Validasi Data Kependudukan',
             font=ctk.CTkFont(size=20, weight='bold'),
-            text_color='#60a5fa'
+            text_color=('#1d4ed8', '#60a5fa')
         ).grid(row=0, column=0, padx=20, pady=0, sticky='w')
 
         ctk.CTkLabel(
             hdr,
             text='NIK Santri & Wali • KK • Alamat • Tempat & Tanggal Lahir',
             font=ctk.CTkFont(size=11),
-            text_color='#475569'
+            text_color=('#475569', '#94a3b8')
         ).grid(row=0, column=1, padx=10, pady=0, sticky='w')
+
+        # Theme toggle button
+        self.theme_btn = ctk.CTkButton(
+            hdr, text='🌙', width=30, height=30, fg_color='transparent', hover_color=('#e2e8f0', '#1e293b'),
+            text_color=('#1e293b', '#f8fafc'), command=self._toggle_theme
+        )
+        self.theme_btn.grid(row=0, column=2, padx=(0, 10), pady=0, sticky='e')
 
         ctk.CTkLabel(
             hdr, text='v1.0',
             font=ctk.CTkFont(size=11),
-            text_color='#334155'
-        ).grid(row=0, column=2, padx=20, pady=0, sticky='e')
+            text_color=('#94a3b8', '#334155')
+        ).grid(row=0, column=3, padx=20, pady=0, sticky='e')
 
     def _build_statusbar(self):
-        bar = ctk.CTkFrame(self, height=30, corner_radius=0, fg_color='#111827')
+        bar = ctk.CTkFrame(self, height=30, corner_radius=0, fg_color=('#ffffff', '#111827'))
         bar.grid(row=5, column=0, sticky='ew')
         bar.grid_columnconfigure(0, weight=1)
         bar.grid_columnconfigure(1, weight=0)
@@ -110,7 +117,7 @@ class App(ctk.CTk):
             bar,
             text='Siap. Upload file Excel atau CSV untuk memulai validasi.',
             font=ctk.CTkFont(size=11),
-            text_color='#4b5563',
+            text_color=('#64748b', '#94a3b8'),
             anchor='w'
         )
         self._status_lbl.grid(row=0, column=0, padx=14, pady=0, sticky='w')
@@ -123,18 +130,33 @@ class App(ctk.CTk):
         self._rows_lbl = ctk.CTkLabel(
             bar, text='',
             font=ctk.CTkFont(size=11),
-            text_color='#4b5563',
+            text_color=('#64748b', '#94a3b8'),
             anchor='e'
         )
         self._rows_lbl.grid(row=0, column=2, padx=14, pady=0, sticky='e')
 
     # ─── Helpers ─────────────────────────────────────────────────────────────
 
-    def _set_status(self, text: str, color: str = '#4b5563'):
+    def _set_status(self, text: str, color: str = None):
+        if color is None:
+            color = ('#64748b', '#94a3b8')
         self._status_lbl.configure(text=text, text_color=color)
 
     def _set_row_count(self, shown: int, total: int):
         self._rows_lbl.configure(text=f'Menampilkan {shown:,} / {total:,} baris')
+        
+    def _toggle_theme(self):
+        current = ctk.get_appearance_mode()
+        if current == "Dark":
+            ctk.set_appearance_mode("light")
+            self.theme_btn.configure(text='☀️')
+            self.table.update_theme("light")
+            self.dashboard.update_theme("light")
+        else:
+            ctk.set_appearance_mode("dark")
+            self.theme_btn.configure(text='🌙')
+            self.table.update_theme("dark")
+            self.dashboard.update_theme("dark")
 
     # ─── Callbacks ───────────────────────────────────────────────────────────
 

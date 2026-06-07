@@ -12,7 +12,7 @@ class UploadPanel(ctk.CTkFrame):
     """Panel dengan tombol upload Excel/CSV dan status file."""
 
     def __init__(self, master, on_file_loaded, **kwargs):
-        super().__init__(master, corner_radius=10, fg_color='#1e2a45', **kwargs)
+        super().__init__(master, corner_radius=10, fg_color=('#ffffff', '#1e2a45'), **kwargs)
         self._callback = on_file_loaded
 
         self.columnconfigure(2, weight=1)
@@ -24,7 +24,7 @@ class UploadPanel(ctk.CTkFrame):
         title = ctk.CTkLabel(
             self, text='Upload Data',
             font=ctk.CTkFont(size=14, weight='bold'),
-            text_color='#e2e8f0'
+            text_color=('#1e293b', '#e2e8f0')
         )
         title.grid(row=0, column=1, padx=(0, 16), pady=14, sticky='w')
 
@@ -32,7 +32,7 @@ class UploadPanel(ctk.CTkFrame):
         self.file_label = ctk.CTkLabel(
             self, text='Belum ada file dipilih.',
             font=ctk.CTkFont(size=12),
-            text_color='#64748b'
+            text_color=('#64748b', '#94a3b8')
         )
         self.file_label.grid(row=0, column=2, padx=8, pady=14, sticky='w')
 
