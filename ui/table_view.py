@@ -38,7 +38,6 @@ class TableView(ctk.CTkFrame):
 
         self.style = ttk.Style()
         self.style.theme_use('clam')
-        self.update_theme("dark")
 
         # Treeview
         self.tree = ttk.Treeview(
@@ -62,10 +61,7 @@ class TableView(ctk.CTkFrame):
         vsb.grid(row=0, column=1, sticky='ns')
         hsb.grid(row=1, column=0, sticky='ew')
 
-        # Row color tags
-        self.tree.tag_configure('valid',   background='#0f2d1a', foreground='#86efac')
-        self.tree.tag_configure('warn',    background='#2d2200', foreground='#fde68a')
-        self.tree.tag_configure('bad',     background='#2d0d0d', foreground='#fca5a5')
+        self.update_theme(ctk.get_appearance_mode().lower())
 
         # Double click to edit
         self.tree.bind('<Double-1>', self._on_double_click)
@@ -81,6 +77,9 @@ class TableView(ctk.CTkFrame):
             head_fg = '#0f172a'
             sel_bg = '#3b82f6'
             act_bg = '#cbd5e1'
+            tag_valid_bg, tag_valid_fg = '#dcfce7', '#14532d'
+            tag_warn_bg, tag_warn_fg = '#fef9c3', '#713f12'
+            tag_bad_bg, tag_bad_fg = '#fee2e2', '#7f1d1d'
         else:
             bg = '#161b22'
             fg = '#e6edf3'
@@ -88,6 +87,9 @@ class TableView(ctk.CTkFrame):
             head_fg = '#93c5fd'
             sel_bg = '#2563eb'
             act_bg = '#253b5e'
+            tag_valid_bg, tag_valid_fg = '#0f2d1a', '#86efac'
+            tag_warn_bg, tag_warn_fg = '#2d2200', '#fde68a'
+            tag_bad_bg, tag_bad_fg = '#2d0d0d', '#fca5a5'
 
         self.style.configure('Treeview',
             background=bg,
@@ -110,6 +112,11 @@ class TableView(ctk.CTkFrame):
         self.style.map('Treeview.Heading',
             background=[('active', act_bg)]
         )
+
+        if hasattr(self, 'tree'):
+            self.tree.tag_configure('valid', background=tag_valid_bg, foreground=tag_valid_fg)
+            self.tree.tag_configure('warn', background=tag_warn_bg, foreground=tag_warn_fg)
+            self.tree.tag_configure('bad', background=tag_bad_bg, foreground=tag_bad_fg)
 
     # ─── Public API ───────────────────────────────────────────────────────────
 

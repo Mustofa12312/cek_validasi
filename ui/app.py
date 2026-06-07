@@ -21,7 +21,7 @@ class App(ctk.CTk):
 
     def __init__(self):
         super().__init__()
-        ctk.set_appearance_mode('dark')
+        ctk.set_appearance_mode('light')
         ctk.set_default_color_theme('blue')
 
         self.title('Validasi Data Kependudukan — v1.0')
@@ -94,7 +94,7 @@ class App(ctk.CTk):
 
         # Theme toggle button
         self.theme_btn = ctk.CTkButton(
-            hdr, text='🌙', width=30, height=30, fg_color='transparent', hover_color=('#e2e8f0', '#1e293b'),
+            hdr, text='☀️', width=30, height=30, fg_color='transparent', hover_color=('#e2e8f0', '#1e293b'),
             text_color=('#1e293b', '#f8fafc'), command=self._toggle_theme
         )
         self.theme_btn.grid(row=0, column=2, padx=(0, 10), pady=0, sticky='e')
