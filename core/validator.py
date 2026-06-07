@@ -33,6 +33,36 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _normalize_names(df: pd.DataFrame) -> pd.DataFrame:
+    """Pisahkan FIRST_NAME jika lebih dari satu kata, pindahkan sisanya ke LAST_NAME."""
+    if 'FIRST_NAME' not in df.columns:
+        return df
+        
+    df = df.copy()
+    if 'LAST_NAME' not in df.columns:
+        df['LAST_NAME'] = ''
+        
+    for idx in range(len(df)):
+        fn = str(df.at[idx, 'FIRST_NAME']).strip()
+        ln = str(df.at[idx, 'LAST_NAME']).strip()
+        
+        if fn.lower() == 'nan': fn = ''
+        if ln.lower() == 'nan': ln = ''
+        
+        parts = fn.split()
+        if len(parts) > 1:
+            new_fn = parts[0]
+            moved_name = " ".join(parts[1:])
+            
+            df.at[idx, 'FIRST_NAME'] = new_fn
+            if ln:
+                df.at[idx, 'LAST_NAME'] = moved_name + " " + ln
+            else:
+                df.at[idx, 'LAST_NAME'] = moved_name
+                
+    return df
+
+
 def check_required_columns(df: pd.DataFrame) -> List[str]:
     return [col for col in REQUIRED_COLUMNS if col not in df.columns]
 
@@ -274,6 +304,7 @@ def validate_dataframe(df: pd.DataFrame, progress_callback=None):
 
     df = normalize_columns(df)
     df = df.reset_index(drop=True)
+    df = _normalize_names(df)
 
     nik_dup_set, kk_dup_set, nik_norm, kk_norm = detect_duplicates(df)
 
