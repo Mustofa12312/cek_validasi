@@ -65,7 +65,7 @@ class App(ctk.CTk):
         self.toolbar.grid(row=3, column=0, sticky='ew', padx=14, pady=(0, 8))
 
         # ── Table
-        self.table = TableView(self)
+        self.table = TableView(self, on_edit=self._on_row_edited)
         self.table.grid(row=4, column=0, sticky='nsew', padx=14, pady=(0, 8))
         self.grid_rowconfigure(4, weight=1)
 
@@ -102,6 +102,8 @@ class App(ctk.CTk):
         bar = ctk.CTkFrame(self, height=30, corner_radius=0, fg_color='#111827')
         bar.grid(row=5, column=0, sticky='ew')
         bar.grid_columnconfigure(0, weight=1)
+        bar.grid_columnconfigure(1, weight=0)
+        bar.grid_columnconfigure(2, weight=0)
         bar.grid_propagate(False)
 
         self._status_lbl = ctk.CTkLabel(
@@ -113,13 +115,18 @@ class App(ctk.CTk):
         )
         self._status_lbl.grid(row=0, column=0, padx=14, pady=0, sticky='w')
 
+        self.progress_var = ctk.DoubleVar(value=0)
+        self.progressbar = ctk.CTkProgressBar(bar, variable=self.progress_var, width=150, height=8)
+        self.progressbar.grid(row=0, column=1, padx=14, pady=0, sticky='e')
+        self.progressbar.set(0)
+
         self._rows_lbl = ctk.CTkLabel(
             bar, text='',
             font=ctk.CTkFont(size=11),
             text_color='#4b5563',
             anchor='e'
         )
-        self._rows_lbl.grid(row=0, column=1, padx=14, pady=0, sticky='e')
+        self._rows_lbl.grid(row=0, column=2, padx=14, pady=0, sticky='e')
 
     # ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -150,7 +157,11 @@ class App(ctk.CTk):
                     self.after(0, lambda: self._set_status('Gagal: kolom tidak lengkap.', '#ef4444'))
                     return
 
-                validated, nik_dup, kk_dup = validate_dataframe(df)
+                def progress_cb(current, total):
+                    if total > 0:
+                        self.after(0, self.progress_var.set, current / total)
+
+                validated, nik_dup, kk_dup = validate_dataframe(df, progress_callback=progress_cb)
                 self.after(0, lambda: self._on_validation_done(validated, nik_dup, kk_dup, filename))
 
             except Exception as exc:
@@ -174,6 +185,26 @@ class App(ctk.CTk):
         persen = round(valid / total * 100, 1) if total else 0
         self._set_status(f'✅  Selesai: {filename} — {total:,} baris, {persen}% valid', '#22c55e')
         self._set_row_count(total, total)
+        self.progressbar.set(1)
+
+    def _on_row_edited(self, edited_df: pd.DataFrame):
+        self._set_status('Memvalidasi ulang data…', '#60a5fa')
+        self.progressbar.set(0)
+        self.update()
+        
+        def worker():
+            try:
+                def progress_cb(current, total):
+                    if total > 0:
+                        self.after(0, self.progress_var.set, current / total)
+                        
+                validated, nik_dup, kk_dup = validate_dataframe(edited_df, progress_callback=progress_cb)
+                self.after(0, lambda: self._on_validation_done(validated, nik_dup, kk_dup, "Data Edit"))
+            except Exception as exc:
+                self.after(0, lambda: messagebox.showerror('Error Validasi', str(exc)))
+                self.after(0, lambda: self._set_status(f'Error: {exc}', '#ef4444'))
+                
+        threading.Thread(target=worker, daemon=True).start()
 
     def _apply_search_filter(self):
         if self._validated_df is None:

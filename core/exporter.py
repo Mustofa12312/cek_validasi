@@ -7,8 +7,8 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 
 EXPORT_COLUMNS = [
-    'FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT',
-    'STATUS', 'SKOR', 'TINGKAT_KESESUAIAN'
+    'FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT', 'GENDER',
+    'STATUS', 'SKOR', 'TINGKAT_KESESUAIAN', 'SARAN_PERBAIKAN'
 ]
 
 _FILL_VALID = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')

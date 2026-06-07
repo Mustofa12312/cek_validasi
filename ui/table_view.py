@@ -10,23 +10,24 @@ from typing import Optional
 
 DISPLAY_COLUMNS = [
     'FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN',
-    'BORN_AT', 'STATUS', 'SKOR', 'TINGKAT_KESESUAIAN'
+    'BORN_AT', 'GENDER', 'STATUS', 'SKOR', 'TINGKAT_KESESUAIAN', 'SARAN_PERBAIKAN'
 ]
 
 COL_WIDTHS = {
     'FIRST_NAME': 130, 'LAST_NAME': 130,
     'PARENT_ID': 130, 'NIK': 130, 'KK': 130,
-    'ADDRESS': 200, 'BORN_IN': 110, 'BORN_AT': 110,
-    'STATUS': 260, 'SKOR': 55, 'TINGKAT_KESESUAIAN': 120,
+    'ADDRESS': 200, 'BORN_IN': 110, 'BORN_AT': 110, 'GENDER': 80,
+    'STATUS': 260, 'SKOR': 55, 'TINGKAT_KESESUAIAN': 120, 'SARAN_PERBAIKAN': 260,
 }
 
 
 class TableView(ctk.CTkFrame):
     """Wrapper CustomTkinter yang menampung ttk.Treeview berwarna."""
 
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, on_edit=None, **kwargs):
         super().__init__(master, fg_color='#0d1117', corner_radius=10, **kwargs)
         self._full_df: Optional[pd.DataFrame] = None
+        self._on_edit = on_edit
         self._build()
 
     # ─── Build ────────────────────────────────────────────────────────────────
@@ -87,6 +88,9 @@ class TableView(ctk.CTkFrame):
         self.tree.tag_configure('warn',    background='#2d2200', foreground='#fde68a')
         self.tree.tag_configure('bad',     background='#2d0d0d', foreground='#fca5a5')
 
+        # Double click to edit
+        self.tree.bind('<Double-1>', self._on_double_click)
+
         self._sort_col = None
         self._sort_rev = False
 
@@ -124,3 +128,58 @@ class TableView(ctk.CTkFrame):
             pass
         df_sorted = df_sorted.sort_values(col, ascending=not self._sort_rev)
         self._render(df_sorted)
+
+    def _on_double_click(self, event):
+        item_id = self.tree.identify_row(event.y)
+        if not item_id or self._full_df is None:
+            return
+
+        values = self.tree.item(item_id, 'values')
+        if not values:
+            return
+            
+        # Get actual original index (using NIK and Name as composite key or just index from _full_df if possible)
+        # Since we just rendered, it's better to find the row from the selected values.
+        # Let's match by NIK, KK, and Name
+        nik_val = values[DISPLAY_COLUMNS.index('NIK')]
+        mask = (self._full_df['NIK'].astype(str) == str(nik_val))
+        if mask.sum() == 0:
+            return
+        
+        idx = self._full_df[mask].index[0]
+        row_data = self._full_df.loc[idx]
+
+        self._open_edit_dialog(idx, row_data)
+
+    def _open_edit_dialog(self, df_idx: int, row_data: pd.Series):
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Edit Data Santri")
+        dialog.geometry("400x500")
+        dialog.transient(self.winfo_toplevel())
+        dialog.grab_set()
+
+        ctk.CTkLabel(dialog, text="Edit Data (Perbaikan)", font=("Arial", 14, "bold")).pack(pady=10)
+
+        entries = {}
+        frame = ctk.CTkScrollableFrame(dialog)
+        frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        editable_cols = ['FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT', 'GENDER']
+        
+        for col in editable_cols:
+            lbl = ctk.CTkLabel(frame, text=col)
+            lbl.pack(anchor='w', pady=(5, 0))
+            ent = ctk.CTkEntry(frame, width=300)
+            ent.insert(0, str(row_data.get(col, '')))
+            ent.pack(pady=(0, 5))
+            entries[col] = ent
+
+        def save_changes():
+            for col, ent in entries.items():
+                self._full_df.at[df_idx, col] = ent.get()
+            dialog.destroy()
+            if self._on_edit:
+                self._on_edit(self._full_df)
+
+        btn = ctk.CTkButton(dialog, text="Simpan & Validasi Ulang", command=save_changes)
+        btn.pack(pady=15)

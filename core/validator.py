@@ -23,7 +23,7 @@ from typing import Optional, Tuple, List
 from data.wilayah import KODE_WILAYAH, KODE_PROVINSI, ALIAS_WILAYAH
 
 
-REQUIRED_COLUMNS = ['PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT']
+REQUIRED_COLUMNS = ['PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT', 'GENDER']
 
 # ─── Normalisasi ─────────────────────────────────────────────────────────────
 
@@ -232,6 +232,53 @@ def validate_tempat_vs_nik(nik_val, tempat_val) -> Tuple[bool, str]:
         ref_name = wilayah_prov
     return False, f'Tempat Lahir Tidak Sesuai Wilayah NIK (Seharusnya: kode {ref_code} {ref_name})'
 
+# ─── Validasi Jenis Kelamin vs NIK & Umur ─────────────────────────────────────
+
+def validate_gender_vs_nik(nik_val, gender_val) -> Tuple[bool, str, str]:
+    """Validasi GENDER (L/P) dengan NIK. Mengembalikan (is_valid, error_msg, saran_gender)."""
+    nik16 = _normalize_id(nik_val)
+    if not nik16:
+        return True, '', ''
+    
+    g_str = _clean_str(gender_val).upper()
+    try:
+        day = int(nik16[6:8])
+        nik_is_female = day > 40
+        expected_gender = 'P' if nik_is_female else 'L'
+        expected_full = 'Perempuan' if nik_is_female else 'Laki-laki'
+
+        if not g_str:
+            return False, 'Jenis Kelamin Kosong', f'Isi Jenis Kelamin: {expected_full}'
+            
+        is_female = g_str.startswith('P') or g_str.startswith('W') # Perempuan / Wanita
+        is_male = g_str.startswith('L') or g_str.startswith('P') and 'PRIA' in g_str
+
+        if (nik_is_female and not is_female) or (not nik_is_female and not is_male):
+            return False, f'Jenis Kelamin Tidak Sesuai NIK (Seharusnya: {expected_full})', f'Ubah Jenis Kelamin menjadi: {expected_full}'
+            
+        return True, '', ''
+    except Exception:
+        return True, '', ''
+
+
+def validate_age(nik_val) -> Tuple[bool, str, str]:
+    """Validasi umur 5 - 30 tahun berdasarkan NIK."""
+    nik16 = _normalize_id(nik_val)
+    if not nik16:
+        return True, '', ''
+    
+    day_n, month_n, year_n = _extract_birthdate_from_nik(nik16)
+    if not year_n:
+        return True, '', ''
+        
+    try:
+        age = datetime.now().year - year_n
+        if age < 5 or age > 30:
+            return False, f'Umur Tidak Rasional ({age} th)', ''
+        return True, '', ''
+    except Exception:
+        return True, '', ''
+
 
 # ─── Deteksi Duplikat ─────────────────────────────────────────────────────────
 
@@ -245,7 +292,7 @@ def detect_duplicates(df: pd.DataFrame):
 
 # ─── Validasi DataFrame Utama ─────────────────────────────────────────────────
 
-def validate_dataframe(df: pd.DataFrame):
+def validate_dataframe(df: pd.DataFrame, progress_callback=None):
     """
     Validasi seluruh DataFrame.
     Returns: (df_result, nik_dup_set, kk_dup_set)
@@ -257,11 +304,17 @@ def validate_dataframe(df: pd.DataFrame):
 
     nik_dup_set, kk_dup_set, nik_norm, kk_norm = detect_duplicates(df)
 
-    statuses, scores, tiers = [], [], []
+    statuses, scores, tiers, saran_list = [], [], [], []
+    
+    total_rows = len(df)
 
-    for idx in range(len(df)):
+    for idx in range(total_rows):
+        if progress_callback:
+            progress_callback(idx, total_rows)
+            
         row = df.iloc[idx]
         errors = []
+        saran_perbaikan = []
         ded    = {}
 
         parent_id_val = row.get('PARENT_ID', '')
@@ -270,6 +323,7 @@ def validate_dataframe(df: pd.DataFrame):
         address_val   = row.get('ADDRESS', '')
         tempat_val = row.get('BORN_IN', '')
         tgl_val    = row.get('BORN_AT', '')
+        gender_val = row.get('GENDER', '')
 
         # 1. NIK
         nik_ok, e = validate_nik(nik_val)
@@ -306,32 +360,56 @@ def validate_dataframe(df: pd.DataFrame):
             ok, e = validate_tgl_vs_nik(nik_val, tgl_val)
             if not ok:
                 errors.append(e); ded['tgl_tidak_sesuai'] = True
+                day_n, month_n, year_n = _extract_birthdate_from_nik(_normalize_id(nik_val))
+                saran_perbaikan.append(f"Ganti Tgl Lahir: {year_n}-{month_n:02d}-{day_n:02d}")
 
         # 7. Tempat Lahir vs Wilayah NIK (Dukcapil)
         if nik_ok and tempat_ok:
             ok, e = validate_tempat_vs_nik(nik_val, tempat_val)
             if not ok:
                 errors.append(e); ded['tempat_tidak_sesuai'] = True
+                # Extract the code from the error message for suggestion
+                if "kode" in e:
+                    saran_perbaikan.append(f"Ganti Tempat Lahir: {e.split('kode')[-1].strip().replace(')','')}")
 
-        # 8. NIK Duplikat
+        # 8. Validasi Gender
+        if nik_ok:
+            ok, e, saran = validate_gender_vs_nik(nik_val, gender_val)
+            if not ok:
+                errors.append(e); ded['gender_tidak_sesuai'] = True
+                if saran: saran_perbaikan.append(saran)
+                
+        # 9. Validasi Umur
+        if nik_ok:
+            ok, e, _ = validate_age(nik_val)
+            if not ok:
+                errors.append(e); ded['umur_tidak_valid'] = True
+
+        # 10. NIK Duplikat
         if nik_norm[idx] in nik_dup_set:
             errors.append('NIK Duplikat'); ded['nik_duplikat'] = True
 
-        # 9. KK Duplikat
+        # 11. KK Duplikat
         if kk_norm[idx] in kk_dup_set:
             errors.append('KK Duplikat'); ded['kk_duplikat'] = True
 
         score  = calculate_score(ded)
         tier   = get_tier(score)
         status = 'VALID' if not errors else ' | '.join(errors)
+        saran_str = ', '.join(saran_perbaikan) if saran_perbaikan else '-'
 
         statuses.append(status)
         scores.append(score)
         tiers.append(tier)
+        saran_list.append(saran_str)
+        
+    if progress_callback:
+        progress_callback(total_rows, total_rows)
 
     df = df.copy()
     df['STATUS']             = statuses
     df['SKOR']               = scores
     df['TINGKAT_KESESUAIAN'] = tiers
+    df['SARAN_PERBAIKAN']    = saran_list
 
     return df, nik_dup_set, kk_dup_set
