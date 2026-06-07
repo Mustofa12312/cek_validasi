@@ -19,6 +19,7 @@ from collections import Counter
 from datetime import datetime
 from difflib import SequenceMatcher
 from typing import Optional, Tuple, List
+from functools import lru_cache
 
 from data.wilayah import KODE_WILAYAH, KODE_PROVINSI, ALIAS_WILAYAH
 
@@ -217,17 +218,8 @@ def _expand_aliases(tempat: str) -> List[str]:
     return result
 
 
-def validate_tempat_vs_nik(nik_val, tempat_val) -> Tuple[bool, str]:
-    """
-    Validasi tempat lahir berdasarkan kode wilayah di NIK.
-    Menggunakan referensi database wilayah Kemendagri (proxy Dukcapil).
-    """
-    nik16 = _normalize_id(nik_val)
-    tempat = _clean_str(tempat_val)
-
-    if not nik16 or not tempat:
-        return True, ''   # Tidak bisa dibandingkan
-
+@lru_cache(maxsize=2048)
+def _cached_tempat_validation(nik16: str, tempat: str) -> Tuple[bool, str]:
     kode4 = nik16[:4]   # Kode kabupaten/kota
     kode2 = nik16[:2]   # Kode provinsi
 
@@ -261,6 +253,21 @@ def validate_tempat_vs_nik(nik_val, tempat_val) -> Tuple[bool, str]:
         ref_code = kode2
         ref_name = wilayah_prov
     return False, f'Tempat Lahir Tidak Sesuai Wilayah NIK (Seharusnya: kode {ref_code} {ref_name})'
+
+def validate_tempat_vs_nik(nik_val, tempat_val) -> Tuple[bool, str]:
+    """
+    Validasi tempat lahir berdasarkan kode wilayah di NIK.
+    Menggunakan referensi database wilayah Kemendagri (proxy Dukcapil).
+    """
+    nik16 = _normalize_id(nik_val)
+    tempat = _clean_str(tempat_val)
+
+    if not nik16 or not tempat:
+        return True, ''   # Tidak bisa dibandingkan
+        
+    return _cached_tempat_validation(nik16, tempat)
+
+
 
 # ─── Validasi Umur ─────────────────────────────────────
 
@@ -303,6 +310,8 @@ def validate_dataframe(df: pd.DataFrame, progress_callback=None):
     from core.scorer import calculate_score, get_tier
 
     df = normalize_columns(df)
+    # Hapus baris yang seluruhnya kosong (mencegah 'ghost rows' dari Excel dibaca sebagai error)
+    df = df.dropna(how='all')
     df = df.reset_index(drop=True)
     df = _normalize_names(df)
 
