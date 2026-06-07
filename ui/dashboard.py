@@ -17,7 +17,6 @@ CARD_COLORS = {
     'NIK DUPLIKAT':     '#7c2d12',
     'KK DUPLIKAT':      '#4a1d96',
     'TGL TIDAK COCOK':  '#713f12',
-    'GENDER ERR':       '#831843',
 }
 
 CARD_TEXT_COLORS = {
@@ -28,7 +27,6 @@ CARD_TEXT_COLORS = {
     'NIK DUPLIKAT':     '#fdba74',
     'KK DUPLIKAT':      '#c4b5fd',
     'TGL TIDAK COCOK':  '#fde68a',
-    'GENDER ERR':       '#fbcfe8',
 }
 
 
@@ -67,7 +65,7 @@ class DashboardPanel(ctk.CTkFrame):
 
     KEYS = [
         'TOTAL DATA', 'DATA VALID', 'TIDAK VALID', '% VALIDASI',
-        'NIK DUPLIKAT', 'KK DUPLIKAT', 'TGL TIDAK COCOK', 'GENDER ERR'
+        'NIK DUPLIKAT', 'KK DUPLIKAT', 'TGL TIDAK COCOK'
     ]
 
     def __init__(self, master, **kwargs):
@@ -119,7 +117,6 @@ class DashboardPanel(ctk.CTkFrame):
         nik_dup = int(df['STATUS'].str.contains('NIK Duplikat', na=False).sum())
         kk_dup  = int(df['STATUS'].str.contains('KK Duplikat', na=False).sum())
         tgl_err = int(df['STATUS'].str.contains('Tidak Sesuai NIK', na=False).sum())
-        gen_err = int(df['STATUS'].str.contains('Jenis Kelamin', na=False).sum())
         persen  = round(valid / total * 100, 1) if total else 0.0
 
         self._cards['TOTAL DATA'].set_value(f'{total:,}')
@@ -128,7 +125,6 @@ class DashboardPanel(ctk.CTkFrame):
         self._cards['NIK DUPLIKAT'].set_value(f'{nik_dup:,}')
         self._cards['KK DUPLIKAT'].set_value(f'{kk_dup:,}')
         self._cards['TGL TIDAK COCOK'].set_value(f'{tgl_err:,}')
-        self._cards['GENDER ERR'].set_value(f'{gen_err:,}')
         self._cards['% VALIDASI'].set_value(persen, '%')
 
         if total > 0:

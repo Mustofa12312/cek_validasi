@@ -7,7 +7,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 
 EXPORT_COLUMNS = [
-    'FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT', 'GENDER',
+    'FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT',
     'STATUS', 'SKOR', 'TINGKAT_KESESUAIAN', 'SARAN_PERBAIKAN'
 ]
 

@@ -10,13 +10,13 @@ from typing import Optional
 
 DISPLAY_COLUMNS = [
     'FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN',
-    'BORN_AT', 'GENDER', 'STATUS', 'SKOR', 'TINGKAT_KESESUAIAN', 'SARAN_PERBAIKAN'
+    'BORN_AT', 'STATUS', 'SKOR', 'TINGKAT_KESESUAIAN', 'SARAN_PERBAIKAN'
 ]
 
 COL_WIDTHS = {
     'FIRST_NAME': 130, 'LAST_NAME': 130,
     'PARENT_ID': 130, 'NIK': 130, 'KK': 130,
-    'ADDRESS': 200, 'BORN_IN': 110, 'BORN_AT': 110, 'GENDER': 80,
+    'ADDRESS': 200, 'BORN_IN': 110, 'BORN_AT': 110,
     'STATUS': 260, 'SKOR': 55, 'TINGKAT_KESESUAIAN': 120, 'SARAN_PERBAIKAN': 260,
 }
 
@@ -164,7 +164,7 @@ class TableView(ctk.CTkFrame):
         frame = ctk.CTkScrollableFrame(dialog)
         frame.pack(fill='both', expand=True, padx=10, pady=5)
 
-        editable_cols = ['FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT', 'GENDER']
+        editable_cols = ['FIRST_NAME', 'LAST_NAME', 'PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT']
         
         for col in editable_cols:
             lbl = ctk.CTkLabel(frame, text=col)

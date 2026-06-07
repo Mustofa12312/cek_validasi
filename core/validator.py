@@ -23,7 +23,7 @@ from typing import Optional, Tuple, List
 from data.wilayah import KODE_WILAYAH, KODE_PROVINSI, ALIAS_WILAYAH
 
 
-REQUIRED_COLUMNS = ['PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT', 'GENDER']
+REQUIRED_COLUMNS = ['PARENT_ID', 'NIK', 'KK', 'ADDRESS', 'BORN_IN', 'BORN_AT']
 
 # ─── Normalisasi ─────────────────────────────────────────────────────────────
 
@@ -232,34 +232,7 @@ def validate_tempat_vs_nik(nik_val, tempat_val) -> Tuple[bool, str]:
         ref_name = wilayah_prov
     return False, f'Tempat Lahir Tidak Sesuai Wilayah NIK (Seharusnya: kode {ref_code} {ref_name})'
 
-# ─── Validasi Jenis Kelamin vs NIK & Umur ─────────────────────────────────────
-
-def validate_gender_vs_nik(nik_val, gender_val) -> Tuple[bool, str, str]:
-    """Validasi GENDER (L/P) dengan NIK. Mengembalikan (is_valid, error_msg, saran_gender)."""
-    nik16 = _normalize_id(nik_val)
-    if not nik16:
-        return True, '', ''
-    
-    g_str = _clean_str(gender_val).upper()
-    try:
-        day = int(nik16[6:8])
-        nik_is_female = day > 40
-        expected_gender = 'P' if nik_is_female else 'L'
-        expected_full = 'Perempuan' if nik_is_female else 'Laki-laki'
-
-        if not g_str:
-            return False, 'Jenis Kelamin Kosong', f'Isi Jenis Kelamin: {expected_full}'
-            
-        is_female = g_str.startswith('P') or g_str.startswith('W') # Perempuan / Wanita
-        is_male = g_str.startswith('L') or g_str.startswith('P') and 'PRIA' in g_str
-
-        if (nik_is_female and not is_female) or (not nik_is_female and not is_male):
-            return False, f'Jenis Kelamin Tidak Sesuai NIK (Seharusnya: {expected_full})', f'Ubah Jenis Kelamin menjadi: {expected_full}'
-            
-        return True, '', ''
-    except Exception:
-        return True, '', ''
-
+# ─── Validasi Umur ─────────────────────────────────────
 
 def validate_age(nik_val) -> Tuple[bool, str, str]:
     """Validasi umur 5 - 30 tahun berdasarkan NIK."""
@@ -323,7 +296,6 @@ def validate_dataframe(df: pd.DataFrame, progress_callback=None):
         address_val   = row.get('ADDRESS', '')
         tempat_val = row.get('BORN_IN', '')
         tgl_val    = row.get('BORN_AT', '')
-        gender_val = row.get('GENDER', '')
 
         # 1. NIK
         nik_ok, e = validate_nik(nik_val)
@@ -372,24 +344,17 @@ def validate_dataframe(df: pd.DataFrame, progress_callback=None):
                 if "kode" in e:
                     saran_perbaikan.append(f"Ganti Tempat Lahir: {e.split('kode')[-1].strip().replace(')','')}")
 
-        # 8. Validasi Gender
-        if nik_ok:
-            ok, e, saran = validate_gender_vs_nik(nik_val, gender_val)
-            if not ok:
-                errors.append(e); ded['gender_tidak_sesuai'] = True
-                if saran: saran_perbaikan.append(saran)
-                
-        # 9. Validasi Umur
+        # 8. Validasi Umur
         if nik_ok:
             ok, e, _ = validate_age(nik_val)
             if not ok:
                 errors.append(e); ded['umur_tidak_valid'] = True
 
-        # 10. NIK Duplikat
+        # 9. NIK Duplikat
         if nik_norm[idx] in nik_dup_set:
             errors.append('NIK Duplikat'); ded['nik_duplikat'] = True
 
-        # 11. KK Duplikat
+        # 10. KK Duplikat
         if kk_norm[idx] in kk_dup_set:
             errors.append('KK Duplikat'); ded['kk_duplikat'] = True
 

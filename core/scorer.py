@@ -8,7 +8,6 @@ DEDUCTIONS = {
     'kk_invalid':         20,   # KK tidak valid
     'tgl_tidak_sesuai':   25,   # Tanggal lahir tidak sesuai NIK
     'tempat_tidak_sesuai': 15,  # Tempat lahir tidak sesuai wilayah NIK (Dukcapil)
-    'gender_tidak_sesuai': 15,  # Jenis Kelamin tidak sesuai NIK
     'umur_tidak_valid':   15,   # Umur tidak rasional (misal: di bawah 5 th atau di atas 30 th)
     'address_kosong':     10,   # Address kosong
     'tempat_kosong':      10,   # Tempat lahir kosong
